@@ -13,19 +13,19 @@
 # Usage:
 #   ./gcp_cost_by_tenant.sh --table <project.dataset.table>
 #                           [--label tenant] [--start YYYY-MM] [--end YYYY-MM]
-#                           [--monthly|--daily] [--dry-run]
+#                           [--dry-run]
 #
 # Examples:
 #   ./gcp_cost_by_tenant.sh --table myproj.billing.gcp_billing_export_v1_XXXX
 #   ./gcp_cost_by_tenant.sh --table ... --start 2026-08 --dry-run
 #
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
 TABLE=""
 LABEL="tenant"
 START=""
 END=""
-GRANULARITY="monthly"
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
@@ -34,8 +34,6 @@ while [[ $# -gt 0 ]]; do
     --label)       LABEL="$2";       shift 2 ;;
     --start)       START="$2";       shift 2 ;;
     --end)         END="$2";         shift 2 ;;
-    --monthly)     GRANULARITY="monthly"; shift ;;
-    --daily)       GRANULARITY="daily";   shift ;;
     --dry-run)     DRY_RUN=1;        shift ;;
     *) die "unknown option: $1 (see header for usage)" ;;
   esac

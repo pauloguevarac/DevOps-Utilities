@@ -19,6 +19,7 @@
 #   ./aws_cost_by_tenant.sh --tag Tenant --start 2026-08      # August 2026
 #   ./aws_cost_by_tenant.sh --daily --dry-run                 # preview only
 #
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
 TAG="Tenant"
@@ -61,17 +62,6 @@ if [[ -n "$PROFILE" ]]; then
 fi
 
 # --- build Cost Explorer request ---------------------------------------
-# GroupBy type TAG expects the tag name WITHOUT the "tag:" prefix.
-query_json=$(cat <<EOF
-{
-  "TimePeriod": {"Start": "$START", "End": "$END"},
-  "Granularity": "$GRANULARITY",
-  "GroupBy": [{"Type": "TAG", "Key": "$TAG"}],
-  "Metrics": ["UnblendedCost"]
-}
-EOF
-)
-
 cmd=(aws ce get-cost-and-usage ${profile_args[@]+"${profile_args[@]}"} \
      --time-period "Start=$START,End=$END" \
      --granularity "$GRANULARITY" \

@@ -21,6 +21,7 @@
 #   ./aws_tenant_provision.sh --tenant acme-corp
 #   ./aws_tenant_provision.sh --tenant acme-corp --prefix saas-data --dry-run
 #
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
 TENANT=""
@@ -47,9 +48,7 @@ fi
 
 BUCKET="${PREFIX}-${TENANT}"
 POLICY_NAME="tenant-${TENANT}-s3"
-TAG_SET="Tenant=${TENANT},ManagedBy=DevOps-Utilities"
 
-region_args=()
 if [[ -n "$PROFILE" ]]; then
   profile_args=(--profile "$PROFILE")
 else
