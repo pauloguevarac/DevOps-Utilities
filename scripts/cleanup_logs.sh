@@ -16,7 +16,7 @@ set -euo pipefail
 
 LOG_DIR="${1:-}"
 DAYS=30
-SIZE_FILTER=""
+SIZE_FILTER=()
 DRY_RUN=0
 
 while [[ $# -gt 1 ]]; do
@@ -24,7 +24,7 @@ while [[ $# -gt 1 ]]; do
     --older-than)
       DAYS="$3"; shift 2 ;;
     --larger-than)
-      SIZE_FILTER="-size +$3"; shift 2 ;;
+      SIZE_FILTER=(-size "+$3"); shift 2 ;;
     --dry-run)
       DRY_RUN=1; shift ;;
     *)
@@ -48,7 +48,7 @@ while IFS= read -r f; do
   candidates+=("$f")
 done < <(
   find "$LOG_DIR" -type f \( -name "*.log" -o -name "*.out" -o -name "*.txt" \) \
-       ${SIZE_FILTER:-} -mtime "+$DAYS" -print 2>/dev/null
+       ${SIZE_FILTER[@]+"${SIZE_FILTER[@]}"} -mtime "+$DAYS" -print 2>/dev/null
 )
 
 if [[ "${#candidates[@]}" -eq 0 ]]; then
