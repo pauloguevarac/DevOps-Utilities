@@ -121,6 +121,135 @@ test_gke_namespace_dry_run() {
   fi
 }
 
+test_terraform_plan_report_no_args() {
+  # missing --dir and no terraform in path should fail cleanly
+  if bash scripts/terraform_plan_report.sh >/dev/null 2>&1; then
+    echo "FAIL: terraform_plan_report should fail without terraform/dir"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: terraform_plan_report fails without terraform"
+    PASS=$((PASS+1))
+  fi
+}
+
+test_k8s_cleanup_validation() {
+  # invalid tenant must fail before touching kubectl
+  if bash scripts/k8s_tenant_cleanup.sh --tenant "BAD NAME" --dry-run >/dev/null 2>&1; then
+    echo "FAIL: k8s_tenant_cleanup should reject invalid tenant"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: k8s_tenant_cleanup rejects invalid tenant"
+    PASS=$((PASS+1))
+  fi
+}
+
+test_tag_guard_provider_required() {
+  # missing --provider must fail
+  if bash scripts/cloud_tag_guard.sh >/dev/null 2>&1; then
+    echo "FAIL: cloud_tag_guard should require --provider"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: cloud_tag_guard requires --provider"
+    PASS=$((PASS+1))
+  fi
+}
+
+test_region_matrix_dry_run() {
+  # dry-run should work without any cloud CLI
+  out=$(bash scripts/multi_cloud_region_matrix.sh \
+        --provider aws --regions us-east-1,eu-west-1 --cmd 'echo hi' --dry-run 2>&1)
+  if grep -q "DRY-RUN" <<<"$out" && grep -q "Done" <<<"$out"; then
+    echo "PASS: multi_cloud_region_matrix dry-run iterates regions"
+    PASS=$((PASS+1))
+  else
+    echo "FAIL: multi_cloud_region_matrix dry-run output unexpected"
+    echo "$out"
+    FAIL=$((FAIL+1))
+  fi
+  # missing --cmd must fail
+  if bash scripts/multi_cloud_region_matrix.sh --provider aws --regions us-east-1 >/dev/null 2>&1; then
+    echo "FAIL: multi_cloud_region_matrix should require --cmd"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: multi_cloud_region_matrix requires --cmd"
+    PASS=$((PASS+1))
+  fi
+}
+
+test_rotate_creds_provider_required() {
+  if bash scripts/rotate_cloud_creds.sh >/dev/null 2>&1; then
+    echo "FAIL: rotate_cloud_creds should require --provider"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: rotate_cloud_creds requires --provider"
+    PASS=$((PASS+1))
+  fi
+}
+
+test_backup_validation() {
+  # missing --source must fail
+  if bash scripts/backup_to_s3_gcs.sh --tenant acme >/dev/null 2>&1; then
+    echo "FAIL: backup_to_s3_gcs should require --source"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: backup_to_s3_gcs requires --source"
+    PASS=$((PASS+1))
+  fi
+  # both buckets missing must fail
+  if bash scripts/backup_to_s3_gcs.sh --tenant acme --source /tmp >/dev/null 2>&1; then
+    echo "FAIL: backup_to_s3_gcs should require a bucket"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: backup_to_s3_gcs requires a bucket"
+    PASS=$((PASS+1))
+  fi
+}
+
+test_docker_prune_dry_run() {
+  # Use a stub docker so we don't need a real daemon.
+  local stub
+  stub=$(mktemp -d)
+  cat >"$stub/docker" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "system" && "$2" == "prune" && "$3" == "--help" ]]; then
+  echo "  --dry-run          Do not remove anything; print what would be removed"
+  exit 0
+fi
+echo "stub docker: $*"
+exit 0
+EOF
+  chmod +x "$stub/docker"
+  out=$(PATH="$stub:$PATH" bash scripts/docker_prune_safe.sh 2>&1)
+  if grep -q "Dry-run only" <<<"$out"; then
+    echo "PASS: docker_prune_safe defaults to dry-run (no deletion)"
+    PASS=$((PASS+1))
+  else
+    echo "FAIL: docker_prune_safe should default to dry-run"
+    echo "$out"
+    FAIL=$((FAIL+1))
+  fi
+  rm -rf "$stub"
+}
+
+test_promtool_missing() {
+  # promtool absent should fail cleanly (not crash)
+  if bash scripts/prometheus_alert_check.sh --files x.yml >/dev/null 2>&1; then
+    echo "PASS: prometheus_alert_check with --files and no promtool exits 0? (no) -> "
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: prometheus_alert_check fails cleanly without promtool"
+    PASS=$((PASS+1))
+  fi
+  # missing both --files and --dir must fail
+  if bash scripts/prometheus_alert_check.sh >/dev/null 2>&1; then
+    echo "FAIL: prometheus_alert_check should require --files or --dir"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: prometheus_alert_check requires --files or --dir"
+    PASS=$((PASS+1))
+  fi
+}
+
 echo "=== DevOps-Utilities test harness ==="
 test_rotate_backups
 test_terraform_check_no_dir
@@ -129,6 +258,14 @@ test_aws_cost_dry_run
 test_aws_provision_validation
 test_gcp_cost_dry_run
 test_gke_namespace_dry_run
+test_terraform_plan_report_no_args
+test_k8s_cleanup_validation
+test_tag_guard_provider_required
+test_region_matrix_dry_run
+test_rotate_creds_provider_required
+test_backup_validation
+test_docker_prune_dry_run
+test_promtool_missing
 
 echo
 echo "Results: $PASS passed, $FAIL failed."

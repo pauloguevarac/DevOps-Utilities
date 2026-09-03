@@ -27,22 +27,30 @@ across production infrastructure. Clean, documented, and battle-tested.
 | `scripts/deploy.sh` | Zero-downtime deploy helper with health-check & rollback hook. |
 | `lambda/cloudfront-remove-html-extension.js` | Lambda@Edge that appends `.html` to CloudFront requests. |
 
-### AWS multi-tenant
+### Cloud multi-tenant (AWS & GCP)
 
 | Script | What it does |
 |--------|--------------|
 | `scripts/aws_cost_by_tenant.sh` | AWS costs grouped by a cost-allocation tag (e.g. `Tenant`) via Cost Explorer. |
 | `scripts/aws_tenant_provision.sh` | Provisions an isolated S3 bucket + tenant-scoped IAM policy, all tagged. Idempotent. |
+| `scripts/gcp_cost_by_tenant.sh` | GCP costs grouped by a `tenant` label from the BigQuery billing export. |
+| `scripts/gke_tenant_namespace.sh` | Creates an isolated GKE namespace with quota, limitrange & network policy. |
+| `scripts/k8s_tenant_cleanup.sh` | **Safely** removes a tenant namespace (requires explicit confirmation). |
+| `scripts/cloud_tag_guard.sh` | Verifies resources carry required tags/labels (so cost grouping actually works). |
+| `scripts/backup_to_s3_gcs.sh` | Backs up a directory to S3 (versioned) and/or GCS, tenant-prefixed. |
+| `scripts/multi_cloud_region_matrix.sh` | Runs a command across a provider × region matrix (DR / consistency). |
 
-### GCP multi-tenant
+### Operations & security
 
 | Script | What it does |
 |--------|--------------|
-| `scripts/gcp_cost_by_tenant.sh` | GCP costs grouped by a `tenant` label from the BigQuery billing export. |
-| `scripts/gke_tenant_namespace.sh` | Creates an isolated GKE namespace with quota, limitrange & network policy. |
+| `scripts/terraform_plan_report.sh` | Summarizes `terraform plan` counts into a PR-friendly report. |
+| `scripts/rotate_cloud_creds.sh` | Lists stale cloud access keys / service-account keys (read-only by default). |
+| `scripts/docker_prune_safe.sh` | Dry-run preview of `docker system prune` before actually deleting. |
+| `scripts/prometheus_alert_check.sh` | Validates Prometheus rule files with `promtool` before applying. |
 
-All cloud scripts default to `--dry-run`-friendly usage and validate tenant
-names to keep them safe for automation.
+All scripts default to a **dry-run / no-op** unless you explicitly opt in,
+and validate inputs (tenant names, args) to stay safe for automation.
 
 ## Quick start
 
@@ -67,6 +75,15 @@ names to keep them safe for automation.
 
 # GKE: isolated tenant namespace
 ./scripts/gke_tenant_namespace.sh --tenant acme-corp --dry-run
+
+# Terraform plan summary (PR-friendly)
+./scripts/terraform_plan_report.sh --dir terraform/prod --format md
+
+# Find cloud access keys older than 90 days (read-only)
+./scripts/rotate_cloud_creds.sh --provider aws --max-age 90
+
+# Preview Docker prune before deleting
+./scripts/docker_prune_safe.sh --all
 ```
 
 ## CI/CD
