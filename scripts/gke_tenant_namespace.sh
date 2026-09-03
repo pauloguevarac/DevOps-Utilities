@@ -19,7 +19,7 @@
 #   ./gke_tenant_namespace.sh --tenant acme-corp
 #   ./gke_tenant_namespace.sh --tenant acme-corp --dry-run
 #
-# shellcheck source=common.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/common.sh"
 
 TENANT=""

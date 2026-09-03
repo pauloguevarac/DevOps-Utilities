@@ -19,7 +19,7 @@
 #   ./gcp_cost_by_tenant.sh --table myproj.billing.gcp_billing_export_v1_XXXX
 #   ./gcp_cost_by_tenant.sh --table ... --start 2026-08 --dry-run
 #
-# shellcheck source=common.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/common.sh"
 
 TABLE=""

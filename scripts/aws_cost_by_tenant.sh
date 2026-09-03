@@ -19,7 +19,7 @@
 #   ./aws_cost_by_tenant.sh --tag Tenant --start 2026-08      # August 2026
 #   ./aws_cost_by_tenant.sh --daily --dry-run                 # preview only
 #
-# shellcheck source=common.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/common.sh"
 
 TAG="Tenant"

@@ -21,7 +21,7 @@
 #   ./aws_tenant_provision.sh --tenant acme-corp
 #   ./aws_tenant_provision.sh --tenant acme-corp --prefix saas-data --dry-run
 #
-# shellcheck source=common.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/common.sh"
 
 TENANT=""
