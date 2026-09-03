@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  lint-shell:
+    name: Shellcheck (bash scripts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck on scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./scripts
+
+  check-terraform:
+    name: Terraform fmt + validate
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('terraform/**') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+      - name: Terraform fmt check
+        run: |
+          for d in terraform/*/; do
+            (cd "$d" && terraform fmt -check)
+          done
+      - name: Terraform init + validate
+        run: |
+          for d in terraform/*/; do
+            (cd "$d" && terraform init -backend=false && terraform validate)
+          done
+
+  run-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute test harness
+        run: |
+          if [[ -x ./run_tests.sh ]]; then ./run_tests.sh; else echo "no test harness found; skipping"; fi
