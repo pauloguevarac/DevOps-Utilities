@@ -43,13 +43,13 @@ if [[ "$PROVIDER" == "aws" ]]; then
   echo "Checking AWS resources for required tags: ${req_tags[*]}"
   aws resourcegroupstaggingapi get-resources ${profile_args[@]+"${profile_args[@]}"} \
     --query 'ResourceTagMappingList[].{ARN:ResourceARN,Tags:Tags}' --output json 2>/dev/null \
-    | python3 -c '
-import sys, json
+    | REQUIRED="$REQUIRED" python3 -c '
+import sys, json, os
+req=[t.lower() for t in os.environ["REQUIRED"].split(",")]
 try:
     data=json.load(sys.stdin)
 except Exception:
     print("Could not read AWS resource-tag data (check permissions)."); sys.exit(0)
-req=[t.lower() for t in "$REQUIRED".split(",")]
 missing=0
 for r in data:
     arn=r.get("ARN","")
@@ -67,9 +67,9 @@ elif [[ "$PROVIDER" == "gcp" ]]; then
   [[ -n "$PROJECT" ]] && projargs=(--project "$PROJECT")
   echo "Checking GCP compute instances for required labels: ${req_tags[*]}"
   gcloud compute instances list ${projargs[@]+"${projargs[@]}"} --format="table(name,labels)" 2>/dev/null \
-    | python3 -c '
-import sys, re
-req=[t.lower() for t in "$REQUIRED".split(",")]
+    | REQUIRED="$REQUIRED" python3 -c '
+import sys, re, os
+req=[t.lower() for t in os.environ["REQUIRED"].split(",")]
 lines=[l for l in sys.stdin if l.strip()]
 instances=lines[1:] if len(lines)>1 else []
 missing=0

@@ -37,7 +37,10 @@ if [[ "$PROVIDER" == "aws" ]]; then
   [[ -n "$PROFILE" ]] && pa=(--profile "$PROFILE")
   echo "Checking AWS IAM access keys older than $MAX_AGE days..."
   # Users with their access keys list.
+  # shellcheck disable=SC2016
   for user in $(aws iam list-users --query 'Users[].UserName' --output text ${pa[@]+"${pa[@]}"}); do
+    # the JMESPath below is literal (single quotes) — shellcheck SC2016 disabled
+    # shellcheck disable=SC2016
     aws iam list-access-keys --user-name "$user" --query 'AccessKeyMetadata[?Status==`Active`].{k:AccessKeyId,d:CreateDate}' --output text ${pa[@]+"${pa[@]}"} \
       | while read -r key created; do
           # crude age check via date
