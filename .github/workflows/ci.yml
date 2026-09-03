@@ -19,22 +19,23 @@ jobs:
   check-terraform:
     name: Terraform fmt + validate
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('terraform/**') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
-      - name: Terraform fmt check
+      - name: Terraform fmt + validate (if terraform/ exists)
         run: |
-          for d in terraform/*/; do
-            (cd "$d" && terraform fmt -check)
-          done
-      - name: Terraform init + validate
-        run: |
-          for d in terraform/*/; do
-            (cd "$d" && terraform init -backend=false && terraform validate)
-          done
+          if [ -d terraform ]; then
+            for d in terraform/*/; do
+              (cd "$d" && terraform fmt -check)
+            done
+            for d in terraform/*/; do
+              (cd "$d" && terraform init -backend=false && terraform validate)
+            done
+          else
+            echo "No terraform/ directory — skipping Terraform checks."
+          fi
 
   run-tests:
     name: Run unit tests
